@@ -1,12 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { exportToExcel } from "../utils/exportToExcel";
 import { useNavigate } from "react-router-dom";
-
-const mockInscritos = [
-  { nome: "Ana Lima", email: "ana@email.com", curso: "Vídeo", data: "2024-03-10", hora: "10:32", genero: "Feminino", nascimento: "2008-04-12" },
-  { nome: "João Silva", email: "joao@email.com", curso: "Fotografia", data: "2024-03-11", hora: "14:15", genero: "Masculino", nascimento: "2007-08-25" },
-  { nome: "Maria Souza", email: "maria@email.com", curso: "Design", data: "2024-03-12", hora: "09:47", genero: "Feminino", nascimento: "2002-09-30" },
-];
+import { listarInscricoes } from "../services/api";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 function calcularIdade(dataNascimento: string) {
   const hoje = new Date();
@@ -20,6 +17,7 @@ function calcularIdade(dataNascimento: string) {
 }
 
 export default function Admin() {
+  const [inscritos, setInscritos] = useState<any[]>([]);
   const [filtroCurso, setFiltroCurso] = useState("");
   const [filtroGenero, setFiltroGenero] = useState("");
   const [filtroFaixaEtaria, setFiltroFaixaEtaria] = useState("");
@@ -27,12 +25,16 @@ export default function Admin() {
   const itensPorPagina = 10;
   const navigate = useNavigate();
 
+  useEffect(() => {
+    listarInscricoes().then(setInscritos).catch(() => toast.error("Erro ao carregar dados"));
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("auth");
     navigate("/login");
   };
 
-  const inscritosFiltrados = mockInscritos.filter((inscrito) => {
+  const inscritosFiltrados = inscritos.filter((inscrito) => {
     const idade = calcularIdade(inscrito.nascimento);
     const faixaEtariaValida =
       filtroFaixaEtaria === ""
@@ -58,11 +60,20 @@ export default function Admin() {
   });
 
   const enviarTermoAutorizacao = () => {
-    alert(`Enviar termo para:\n\n${menoresDeIdade.map(p => `• ${p.nome} (${p.email})`).join("\n")}`);
+    if (menoresDeIdade.length === 0) {
+      toast.info("Nenhum menor de idade encontrado.");
+    } else {
+      toast.success(`Enviar termo para: ${menoresDeIdade.map(p => p.nome).join(", ")}`);
+    }
+  };
+
+  const exportar = () => {
+    exportToExcel(inscritosFiltrados, "inscricoes-filtradas");
+    toast.success("Exportação concluída!");
   };
 
   return (
-    <div className="px-4 sm:px-6 md:px-10 py-4">
+    <div className="px-4 sm:px-6 md:px-10 py-4 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">Painel Administrativo</h1>
         <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded w-full sm:w-auto">
@@ -73,11 +84,7 @@ export default function Admin() {
       <div className="flex flex-wrap gap-x-4 gap-y-2 mb-6">
         <div>
           <label className="mr-2 font-semibold">Curso:</label>
-          <select
-            className="border p-2 rounded"
-            value={filtroCurso}
-            onChange={(e) => setFiltroCurso(e.target.value)}
-          >
+          <select className="border p-2 rounded" value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}>
             <option value="">Todos</option>
             <option value="Vídeo">Vídeo</option>
             <option value="Fotografia">Fotografia</option>
@@ -87,11 +94,7 @@ export default function Admin() {
 
         <div>
           <label className="mr-2 font-semibold">Gênero:</label>
-          <select
-            className="border p-2 rounded"
-            value={filtroGenero}
-            onChange={(e) => setFiltroGenero(e.target.value)}
-          >
+          <select className="border p-2 rounded" value={filtroGenero} onChange={(e) => setFiltroGenero(e.target.value)}>
             <option value="">Todos</option>
             <option value="Feminino">Feminino</option>
             <option value="Masculino">Masculino</option>
@@ -102,11 +105,7 @@ export default function Admin() {
 
         <div>
           <label className="mr-2 font-semibold">Faixa Etária:</label>
-          <select
-            className="border p-2 rounded"
-            value={filtroFaixaEtaria}
-            onChange={(e) => setFiltroFaixaEtaria(e.target.value)}
-          >
+          <select className="border p-2 rounded" value={filtroFaixaEtaria} onChange={(e) => setFiltroFaixaEtaria(e.target.value)}>
             <option value="">Todas</option>
             <option value="18-25">18 a 25</option>
             <option value="26-35">26 a 35</option>
@@ -166,7 +165,7 @@ export default function Admin() {
 
       <div className="flex flex-col sm:flex-row gap-4 mt-6">
         <button
-          onClick={() => exportToExcel(inscritosFiltrados, "inscricoes-filtradas")}
+          onClick={exportar}
           className="bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-auto"
         >
           Exportar para Excel
@@ -179,6 +178,8 @@ export default function Admin() {
           Enviar termo p/ menores de idade
         </button>
       </div>
+
+      <ToastContainer autoClose={3000} hideProgressBar newestOnTop theme="colored" />
     </div>
   );
 }

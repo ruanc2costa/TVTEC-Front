@@ -1,4 +1,4 @@
-import InscricaoForm from "../components/forms/InscricaoForm";
+import InscricaoForm from "../forms/forms/InscricaoForm";
 
 export default function Home() {
   return (

@@ -24,6 +24,7 @@ function App() {
         <Route path="/cursos/:id" element={<CursoDetalhes />} />
         <Route path="/inscricoes" element={isAuthenticated ? <InscricoesDetalhadas /> : <Navigate to="/login" replace />} />
         <Route path="/admin" element={isAuthenticated ? <PaginaGerenciamento  /> : <Navigate to="/login" replace />} />
+        
       </Routes>
     </Router>
   );

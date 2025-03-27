@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const API_URL = "https://cursos-tv.onrender.com/curso";
 
@@ -6,12 +8,10 @@ export default function CadastroCurso() {
   const [form, setForm] = useState({
     nome: "",
     professor: "",
-    dataInicio: "",
-    dataFim: "",
+    data: "",
     cargaHoraria: "",
     certificado: "",
   });
-  const [mensagem, setMensagem] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -20,28 +20,40 @@ export default function CadastroCurso() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMensagem("");
+    toast.dismiss();
+
+    console.log("ENVIANDO DADOS...");
+
     try {
+      const body = {
+        nome: form.nome,
+        professor: form.professor,
+        data: new Date(form.data).toISOString(),
+        cargaHoraria: parseInt(form.cargaHoraria),
+        certificado: form.certificado,
+      };
+
+      console.log("Dados enviados:", body);
+
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          cargaHoraria: parseInt(form.cargaHoraria),
-        }),
+        body: JSON.stringify(body),
       });
+
       if (!res.ok) throw new Error("Erro ao cadastrar curso");
-      setMensagem("Curso cadastrado com sucesso!");
-      setForm({ nome: "", professor: "", dataInicio: "", dataFim: "", cargaHoraria: "", certificado: "" });
+
+      toast.success("Curso cadastrado com sucesso!", { position: "top-center" });
+      setForm({ nome: "", professor: "", data: "", cargaHoraria: "", certificado: "" });
     } catch (err) {
-      setMensagem("Erro ao cadastrar curso. Tente novamente.");
+      toast.error("Erro ao cadastrar curso. Verifique os campos e tente novamente.", { position: "top-center" });
     }
   };
 
   return (
     <div className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Cadastro de Curso</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <h1 className="text-2xl font-bold mb-4">Cadastrar Curso</h1>
+      <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
         <input
           type="text"
           name="nome"
@@ -54,7 +66,7 @@ export default function CadastroCurso() {
         <input
           type="text"
           name="professor"
-          placeholder="Professor responsável"
+          placeholder="Nome do professor"
           value={form.professor}
           onChange={handleChange}
           className="w-full border p-2 rounded"
@@ -62,16 +74,8 @@ export default function CadastroCurso() {
         />
         <input
           type="date"
-          name="dataInicio"
-          value={form.dataInicio}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
-        />
-        <input
-          type="date"
-          name="dataFim"
-          value={form.dataFim}
+          name="data"
+          value={form.data}
           onChange={handleChange}
           className="w-full border p-2 rounded"
           required
@@ -79,12 +83,11 @@ export default function CadastroCurso() {
         <input
           type="number"
           name="cargaHoraria"
-          placeholder="Carga horária (em horas)"
+          placeholder="Carga horária"
           value={form.cargaHoraria}
           onChange={handleChange}
           className="w-full border p-2 rounded"
           required
-          min={1}
         />
         <input
           type="text"
@@ -95,11 +98,14 @@ export default function CadastroCurso() {
           className="w-full border p-2 rounded"
           required
         />
-        <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded">
+        <button
+          type="submit"
+          className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+        >
           Cadastrar Curso
         </button>
       </form>
-      {mensagem && <p className="mt-4 text-center font-semibold text-green-700">{mensagem}</p>}
+      <ToastContainer autoClose={3000} hideProgressBar newestOnTop theme="colored" />
     </div>
   );
 }
